@@ -23,7 +23,7 @@
 
     <div class="container">
         <div class="card contact-card">
-            <form id="contact-form" class="contact-form" method="POST" data-endpoint="https://formspree.io/f/mgowklew" novalidate>
+            <form id="contact-form" class="contact-form" method="POST" action="https://formspree.io/f/mgowklew" data-endpoint="https://formspree.io/f/mgowklew" novalidate>
                 <input type="hidden" name="_replyto" id="contact-replyto">
                 <div class="form-group">
                     <label for="name">Name</label>
@@ -51,6 +51,9 @@
 
                 <p class="contact-message form-message" aria-live="polite"></p>
             </form>
+            <noscript>
+                <p class="contact-message form-message">JavaScript is disabled in your browser — please email <a href="mailto:ecofutureuganda@gmail.com">ecofutureuganda@gmail.com</a> or enable JavaScript to use this contact form.</p>
+            </noscript>
         </div>
     </div>
      <button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
@@ -58,5 +61,6 @@
     <footer>
         <p>&copy; 2025 EcoFuture Uganda. All rights reserved.</p>
     </footer>
+    <script src="scripts/main.js"></script>
 </body>
 </html>
