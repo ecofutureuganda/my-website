@@ -64,12 +64,36 @@ document.addEventListener('DOMContentLoaded', function () {
                 const formData = new FormData();
                 formData.append('email', val);
                 formData.append('_replyto', val);
-                const res = await fetch(endpoint, {
+                let res = await fetch(endpoint, {
                     method: 'POST',
+                    headers: { 'Accept': 'application/json' },
                     body: formData,
                 });
-                const ct = (res.headers.get('Content-Type') || '');
-                const resJson = ct.includes('application/json') ? await res.json().catch(() => null) : null;
+                let ct = (res.headers.get('Content-Type') || '');
+                let resJson = ct.includes('application/json') ? await res.json().catch(() => null) : null;
+                console.debug('Newsletter submit response', res.status, resJson);
+
+                // Retry with JSON if 405 Not Allowed
+                if (res.status === 405) {
+                    console.debug('Received 405, retrying newsletter submit with JSON payload');
+                    const jsonBody = JSON.stringify({ email: val, _replyto: val });
+                    try {
+                        res = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                            body: jsonBody,
+                        });
+                        ct = (res.headers.get('Content-Type') || '');
+                        resJson = ct.includes('application/json') ? await res.json().catch(() => null) : null;
+                        console.debug('Newsletter submit retry response', res.status, resJson);
+                    } catch (e) {
+                        console.error('Newsletter submit retry error:', e);
+                        messageEl.textContent = 'Subscription failed — please try again later.';
+                        messageEl.classList.add('error');
+                        return;
+                    }
+                }
+
                 if (res.ok) {
                     messageEl.textContent = 'Thanks! You’re subscribed.';
                     messageEl.classList.add('success');
@@ -146,15 +170,41 @@ document.addEventListener('DOMContentLoaded', function () {
                 formDataC.append('_replyto', emailVal);
                 formDataC.append('_subject', subject || 'Website contact form');
                 formDataC.append('message', message);
-                const res = await fetch(endpoint, {
+                let res = await fetch(endpoint, {
                     method: 'POST',
+                    headers: { 'Accept': 'application/json' },
                     body: formDataC,
                 });
-                const ct = (res.headers.get('Content-Type') || '');
-                const resJson = ct.includes('application/json') ? await res.json().catch(() => null) : null;
+                let ct = (res.headers.get('Content-Type') || '');
+                let resJson = ct.includes('application/json') ? await res.json().catch(() => null) : null;
                 // clone response text for debugging if needed
                 let rawText = null;
                 try { rawText = await res.clone().text(); } catch (e) { /* ignore */ }
+                console.debug('Contact submit response', res.status, resJson || rawText);
+
+                // If server responds 405 Not Allowed, retry with JSON payload (Formspree supports JSON)
+                if (res.status === 405) {
+                    console.debug('Received 405, retrying contact submit with JSON payload');
+                    const jsonBody = JSON.stringify({ name, email: emailVal, _replyto: emailVal, _subject: subject || 'Website contact form', message });
+                    try {
+                        res = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                            body: jsonBody,
+                        });
+                        ct = (res.headers.get('Content-Type') || '');
+                        resJson = ct.includes('application/json') ? await res.json().catch(() => null) : null;
+                        rawText = null;
+                        try { rawText = await res.clone().text(); } catch (e) { /* ignore */ }
+                        console.debug('Contact submit retry response', res.status, resJson || rawText);
+                    } catch (e) {
+                        console.error('Contact submit retry error:', e);
+                        contactMsg.textContent = 'Sending failed — please try again later.';
+                        contactMsg.classList.add('error');
+                        return;
+                    }
+                }
+
                 if (res.ok) {
                     contactMsg.textContent = 'Message sent — thank you!';
                     contactMsg.classList.add('success');
